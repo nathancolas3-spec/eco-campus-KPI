@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Éco-Campus — Dashboard Impact</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #1f2933;
+      --card-dark: #2e3a47;
+      --accent: #22c55e;
+      --accent-light: #4ade80;
+      --text-light: #e0e7eb;
+      --text-muted: #94a3b8;
+      --radius: 12px;
+      --shadow-dark: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      font-family: 'Poppins', sans-serif;
+    }
+    header {
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--card-dark);
+      box-shadow: var(--shadow-dark);
+    }
+    .logo { font-size: 1.5rem; font-weight: 600; color: var(--accent); }
+    .controls { display: flex; gap: 12px; align-items: center; }
+    .controls select, .controls button {
+      background: var(--card-dark);
+      border: 1px solid #3f4f60;
+      color: var(--text-light);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+    .controls button { background: var(--accent); color: #1f2933; }
+    main {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 24px;
+      padding: 24px;
+    }
+    .card {
+      background: var(--card-dark);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-dark);
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+    }
+    .kpi {
+      text-align: center;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: #273444;
+    }
+    .kpi .label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; }
+    .kpi .value { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 24px;
+    }
+    canvas {
+      background: var(--card-dark);
+      border-radius: var(--radius);
+      padding: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: var(--text-light);
+      margin-top: 16px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #3b4b5c;
+    }
+    th {
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .sidebar .small {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Éco-Campus Dashboard</div>
+  <div class="controls">
+    <select id="yearSelect"></select>
+    <button id="refreshBtn">🔄 Simuler</button>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="label">Occupation chambres</div>
+          <div class="value" id="kpiRooms">— %</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Occupation coworking</div>
+          <div class="value" id="kpiCowork">— %</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Revenu mensuel</div>
+          <div class="value" id="kpiRevenue">— €</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <canvas id="revenueChart"></canvas>
+        <canvas id="occupancyDonut"></canvas>
+        <canvas id="energyChart"></canvas>
+        <canvas id="extrasChart"></canvas>
+      </div>
+
+      <div class="card" style="margin-top:24px;">
+        <h3 style="margin:0; color: var(--text-light)">Détail du mois sélectionné</h3>
+        <table>
+          <thead><tr><th>Indicateur</th><th>Valeur</th></tr></thead>
+          <tbody id="detailTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div class="card">
+      <h3 style="margin:0; color: var(--text-light)">Résumé annuel</h3>
+      <div class="small">42 chambres • 3 espaces coworking</div>
+      <div class="small">Prix / semaine (chambre) : 100 €</div>
+      <hr style="border:1px solid #3b4b5c; margin:12px 0;">
+      <div class="small">kWh produits : <strong id="totalKwh">—</strong></div>
+      <div class="small">Gobelets évités : <strong id="totalCups">—</strong></div>
+      <div class="small">Kg légumes : <strong id="totalVeg">—</strong></div>
+      <div class="small">CO₂ évité (est.) : <strong id="totalCo2">—</strong></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+const ctxRev = document.getElementById('revenueChart');
+const ctxOcc = document.getElementById('occupancyDonut');
+const ctxEn = document.getElementById('energyChart');
+const ctxEx = document.getElementById('extrasChart');
+
+const months = ['Jan','Fév','Mars','Avr','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
+const randomData = () => months.map(()=>Math.floor(Math.random()*20)+80);
+
+function generateData(){
+  const roomsOcc = randomData();
+  const coworkOcc = randomData().map(x=>x-10);
+  const revenue = months.map((_,i)=> Math.round(roomsOcc[i]/100 * 42 * 100 * 4));
+  return {roomsOcc, coworkOcc, revenue};
+}
+
+let data = generateData();
+
+function updateCharts(){
+  document.getElementById('kpiRooms').textContent = Math.round(data.roomsOcc[11])+'%';
+  document.getElementById('kpiCowork').textContent = Math.round(data.coworkOcc[11])+'%';
+  document.getElementById('kpiRevenue').textContent = data.revenue[11].toLocaleString()+' €';
+
+  document.getElementById('totalKwh').textContent = (Math.random()*30000+20000).toFixed(0)+' kWh';
+  document.getElementById('totalCups').textContent = (Math.random()*25000+10000).toFixed(0);
+  document.getElementById('totalVeg').textContent = (Math.random()*1500+800).toFixed(0)+' kg';
+  document.getElementById('totalCo2').textContent = (Math.random()*6000+3000).toFixed(0)+' kg';
+
+  new Chart(ctxRev, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{ label: 'Revenus (€)', data: data.revenue, backgroundColor: '#22c55e' }]
+    },
+    options: { scales: { y: { ticks: { color: '#e0e7eb' } }, x: { ticks: { color: '#e0e7eb' } } } }
+  });
+
+  new Chart(ctxOcc, {
+    type: 'doughnut',
+    data: { labels: ['Chambres','Coworking'], datasets: [{ data: [data.roomsOcc[11], data.coworkOcc[11]], backgroundColor: ['#22c55e','#4ade80'] }] },
+    options: { plugins: { legend: { labels: { color: '#e0e7eb' } } } }
+  });
+
+  new Chart(ctxEn, {
+    type: 'line',
+    data: { labels: months, datasets: [{ label: 'Énergie (kWh)', data: months.map(()=>Math.random()*3000+2000), borderColor: '#4ade80', fill: false }] },
+    options: { scales: { x: { ticks: { color: '#e0e7eb' } }, y: { ticks: { color: '#e0e7eb' } } } }
+  });
+
+  new Chart(ctxEx, {
+    type: 'polarArea',
+    data: { labels: ['Gobelets évités','Légumes (kg)','CO₂ évité'], datasets: [{ data: [12000,900,5000], backgroundColor: ['#22c55e','#86efac','#16a34a'] }] },
+    options: { plugins: { legend: { labels: { color: '#e0e7eb' } } } }
+  });
+
+  const table = document.getElementById('detailTable');
+  table.innerHTML = `
+    <tr><td>Occupation moyenne chambres</td><td>${avg(data.roomsOcc)}%</td></tr>
+    <tr><td>Occupation coworking</td><td>${avg(data.coworkOcc)}%</td></tr>
+    <tr><td>Revenu total</td><td>${sum(data.revenue).toLocaleString()} €</td></tr>
+    <tr><td>CO₂ évité</td><td>${(Math.random()*6000+2000).toFixed(0)} kg</td></tr>
+    <tr><td>kWh produit</td><td>${(Math.random()*30000+20000).toFixed(0)} kWh</td></tr>
+  `;
+}
+function avg(arr){return (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1);}
+function sum(arr){return arr.reduce((a,b)=>a+b,0);}
+
+updateCharts();
+document.getElementById('refreshBtn').onclick = ()=>{data = generateData(); updateCharts();};
+</script>
+</body>
+</html>
