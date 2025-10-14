@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tableau de bord Éco-Campus</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🌿 Tableau de bord Éco-Campus</h1>
+    <p>Suivi des performances environnementales, sociales et économiques</p>
+  </header>
+
+  <main>
+    <section class="cards">
+      <div class="card">
+        <h2>Taux d’occupation global</h2>
+        <p id="tauxOccupation">95%</p>
+      </div>
+      <div class="card">
+        <h2>Rentabilité annuelle</h2>
+        <p id="rentabilite">+12%</p>
+      </div>
+      <div class="card">
+        <h2>Énergie verte générée</h2>
+        <p id="energie">4 800 kWh</p>
+      </div>
+      <div class="card">
+        <h2>Gobelets économisés</h2>
+        <p id="gobelets">8 400</p>
+      </div>
+      <div class="card">
+        <h2>Légumes produits</h2>
+        <p id="legumes">275 kg</p>
+      </div>
+    </section>
+
+    <section class="charts">
+      <div class="chart-container">
+        <canvas id="occupationChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="rentabiliteChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="energieChart"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Éco-Campus – Projet durable et responsable 🌎</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
